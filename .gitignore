@@ -1,0 +1,11 @@
+stack/.env
+stack/.env.generated
+*.log
+**/logs/
+/mnt/chubee-data/
+super-weights/
+ollama-models/
+.vscode/
+.idea/
+*.swp
+build/spark-vllm-docker/
