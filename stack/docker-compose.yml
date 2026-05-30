@@ -112,6 +112,7 @@ services:
       - N8N_LOG_LEVEL=warn
       - HA_TOKEN=${HA_TOKEN}
       - CHUBEE_MCP_TOKEN=${CHUBEE_MCP_TOKEN}
+      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE}
     volumes:
       - /mnt/chubee-data/docker-volumes/n8n:/home/node/.n8n
     depends_on:
