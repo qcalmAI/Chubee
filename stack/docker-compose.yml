@@ -113,8 +113,13 @@ services:
       - HA_TOKEN=${HA_TOKEN}
       - CHUBEE_MCP_TOKEN=${CHUBEE_MCP_TOKEN}
       - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - NODE_FUNCTION_ALLOW_BUILTIN=fs,path
+      - N8N_RESTRICT_FILE_ACCESS_TO=/home/node/.n8n-files;/skills
     volumes:
       - /mnt/chubee-data/docker-volumes/n8n:/home/node/.n8n
+      - /mnt/chubee-data/skills:/skills:rw
+      - /mnt/chubee-data/skills/_index.json:/home/node/.n8n-files/_index.json:ro
     depends_on:
       postgres:
         condition: service_healthy

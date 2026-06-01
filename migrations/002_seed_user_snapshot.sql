@@ -1,0 +1,8 @@
+INSERT INTO memory_snapshot (target, key, content) VALUES
+  ('user', 'identity',       'Name: Quinton Calmus. Email: qcalmus@gmail.com. Chubee email: quintonschubee@gmail.com. Device: Microsoft Surface (Windows ARM). Phone: Pixel 10 Pro (Android).'),
+  ('user', 'hardware',       'ChubeeAcer: Acer Veriton GN100, NVIDIA GB10 Grace Blackwell Superchip, 128 GB LPDDR5x unified memory (119 GB reported — normal), 4 TB NVMe, DGX OS. Tailscale IP: 100.65.206.99. SSH alias: chubee.'),
+  ('user', 'preferences',    'Communication style: direct, no filler, no performed enthusiasm. Dry wit welcome when it lands. Recommendations: give one, commit to it. Pushback: say so and explain why. Match response length to real complexity.'),
+  ('memory', 'stack',        'Stack lives in ~/chubee/stack/. Data at /mnt/chubee-data. Backup drive at /mnt/chubee-backup. Primary model: Nemotron 3 Super 120B A12B via vLLM. Vision: GLM-4.6V-Flash 9B via Ollama (on-demand). Embedding: BGE-M3 via Ollama (always resident). Frontier: OpenRouter deepseek-v4-flash (manual only).'),
+  ('memory', 'architecture', 'v5.0 two-tier memory: memory_snapshot (always injected, ~1300 tokens/turn) + episodic_memory (hybrid vector+FTS recall on demand). Session messages logged to session_messages. Skills in /mnt/chubee-data/skills/. Context compressor fires at 91750 tokens. Iteration budget: 90 per conversation.'),
+  ('memory', 'phase_status', 'Phase 1 (core stack) in migration to v5.0. Phase 2 (voice/HA Conversation) not yet built — voice_model route configured but HA not pointed at it.')
+ON CONFLICT (target, key) DO UPDATE SET content = EXCLUDED.content, updated_at = NOW();

@@ -2,29 +2,26 @@ model_list:
   - model_name: primary_model
     litellm_params:
       model: openai/nemotron-3-super
-      api_base: http://host.docker.internal:8000/v1
-      api_key: "not-needed"
-      timeout: 600
-      stream_timeout: 600
-      extra_body:
-        chat_template_kwargs:
-          enable_thinking: true
+      api_base: http://vllm-super:8000/v1
+      api_key: fake
+      max_tokens: 32768
   - model_name: primary_model_fast
     litellm_params:
       model: openai/nemotron-3-super
-      api_base: http://host.docker.internal:8000/v1
-      api_key: "not-needed"
-      timeout: 300
-      stream_timeout: 300
-      extra_body:
-        chat_template_kwargs:
-          enable_thinking: false
+      api_base: http://vllm-super:8000/v1
+      api_key: fake
+      max_tokens: 8192
+  - model_name: voice_model
+    litellm_params:
+      model: openai/nemotron-3-super
+      api_base: http://vllm-super:8000/v1
+      api_key: fake
+      max_tokens: 2048
   - model_name: vision_model
     litellm_params:
-      model: ollama/haervwe/GLM-4.6V-Flash-9B
+      model: ollama/glm4v-flash
       api_base: http://host.docker.internal:11434
-      timeout: 180
-      stream_timeout: 180
+      max_tokens: 4096
   - model_name: embedding_model
     litellm_params:
       model: ollama/bge-m3
@@ -33,24 +30,26 @@ model_list:
     litellm_params:
       model: openrouter/deepseek/deepseek-v4-flash
       api_key: os.environ/FRONTIER_API_KEY
-      api_base: https://openrouter.ai/api/v1
+      max_tokens: 32768
   - model_name: coding_model
     litellm_params:
       model: openrouter/deepseek/deepseek-v4-pro
       api_key: os.environ/FRONTIER_API_KEY
-      api_base: https://openrouter.ai/api/v1
+      max_tokens: 32768
 litellm_settings:
-  drop_params: true
-  set_verbose: false
-  callbacks: ["langfuse"]
+  callbacks:
+    - langfuse
+    - chubee_budget.chubee_budget_instance
+    - chubee_compressor.chubee_compressor_instance
+    - chubee_router.chubee_router_instance
+  request_timeout: 600
+  num_retries: 2
+  fallbacks:
+    - primary_model:
+        - frontier_model
+    - primary_model_fast:
+        - frontier_model
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
-router_settings:
-  routing_strategy: simple-shuffle
-  fallbacks:
-    - primary_model: [frontier_model]
-    - primary_model_fast: [primary_model]
-    - frontier_model: [primary_model]
-  num_retries: 2
-  timeout: 60
+  store_model_in_db: false
