@@ -69,14 +69,9 @@ services:
       - gateway
     volumes:
       - ~/.hermes:/opt/data
-      # Isolate the dashboard's s6 log dir so its gateway log-supervisor can't
-      # collide with the real gateway's lock at /opt/data/logs/gateways/*/lock
-      # (Hermes bug #34480, fixed upstream after v0.15.1). Config/sessions/state
-      # stay shared via the mount above; only logs/ is shadowed. Reversible:
-      # remove this line + the ~/.hermes-dashboard-logs dir to revert.
-      - ~/.hermes-dashboard-logs:/opt/data/logs
     environment:
       - HERMES_UID=${HERMES_UID:-10000}
       - HERMES_GID=${HERMES_GID:-10000}
-    # Localhost-only. For remote access, tunnel via `ssh -L 9119:localhost:9119`.
+    # Bound to 0.0.0.0 --insecure for remote access over Tailscale (100.65.206.99).
+    # Upstream defaults to 127.0.0.1; this is a deliberate local customization.
     command: ["dashboard", "--host", "0.0.0.0", "--insecure", "--no-open"]
