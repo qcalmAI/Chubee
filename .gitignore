@@ -1,0 +1,55 @@
+# Secrets — NEVER commit
+.env
+.env.bak*
+.env.*.bak*
+auth.json
+.anthropic_oauth.json
+hermes_ssh_key
+hermes_ssh_key.pub
+
+# SSH keys
+.ssh/
+
+# Caches
+.cache/
+.local/
+*.pyc
+__pycache__/
+mcp/
+
+# Runtime DBs & locks
+*.db
+*.db-shm
+*.db-wal
+state.db*
+kanban.db
+response_store.db
+*.lock
+.sync.lock
+auth.lock
+
+# Model caches
+ollama_cloud_models_cache.json
+provider_models_cache.json
+models_dev_cache.json
+cache/
+
+# Sessions & temp
+sessions/
+pastes/
+spawn-trees/
+logs/
+
+# Backup/revert files
+*.bak*
+*.revert-*
+
+# Runtime state
+gateway_state.json
+channel_directory.json
+.skills_prompt_snapshot.json
+.hermes_history
+.install_method
+gateway.pid
+cron/output/
+cron/jobs.json

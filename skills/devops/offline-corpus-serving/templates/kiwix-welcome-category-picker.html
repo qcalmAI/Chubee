@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<!--
+  Kiwix --customIndex welcome page: category-based search with relevance ranking.
+  Uses /suggest API (title index) instead of /search (term-frequency ranked)
+  for actual relevance.
+
+  Categories: All, Wikipedia, Forums, Textbooks, API Docs, Travel, Wiktionary,
+  Medical, Repair, Literature. Auto-discovers ZIMs from /catalog/v2/entries.
+
+  DEPLOY:
+   - Copy to /mnt/chubee-data/corpora/welcome.html, chmod 644
+   - compose: ["--library","/data/library.xml","--customIndex","/data/welcome.html"]
+   - docker compose restart kiwix (caches at startup)
+
+  CRITICAL: Use suggest API's `path` field for URLs, not `value`.
+  Different ZIM types use different path structures:
+  - Wikipedia: path = "Superman"
+  - iFixit:    path = "Device/Chevrolet_Corvair"
+  - Stack Exchange: path = "questions/1416005/python-virtualenv-python-3"
+  - LibreTexts: path = "index/page_14493"
+  See references/kiwix-suggest-api-html-entities.md for full details.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chubee Offline Corpus</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: #0f1115; color: #e6e6e6; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 1.5rem 1rem 3rem;
+    gap: 1.4rem;
+  }
+  h1 { font-weight: 600; font-size: 1.6rem; text-align: center; }
+  .controls { display: flex; flex-direction: column; gap: .7rem; width: min(94vw, 660px); }
+  form { display: flex; gap: .5rem; position: relative; }
+  input[type=search] {
+    flex: 1; padding: .85rem 1rem; font-size: 1.05rem; border-radius: 10px;
+    border: 1px solid #2a2e37; background: #181b22; color: #e6e6e6; outline: none;
+  }
+  input:focus { border-color: #4c8bf5; }
+  button {
+    padding: .85rem 1.4rem; font-size: 1.05rem; border: 0; border-radius: 10px;
+    background: #4c8bf5; color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  button:hover { background: #3b78e0; }
+  #drop {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20;
+    background: #181b22; border: 1px solid #2a2e37; border-radius: 10px;
+    overflow: hidden; display: none; max-height: 55vh; overflow-y: auto;
+  }
+  #drop a {
+    display: block; padding: .55rem 1rem; color: #e6e6e6; text-decoration: none;
+    border-bottom: 1px solid #21252e; font-size: .93rem;
+  }
+  #drop a:last-child { border-bottom: 0; }
+  #drop a:hover, #drop a.active { background: #232834; }
+  #drop a .match { color: #7fb0ff; font-weight: 600; }
+  #drop a .src { color: #5a6070; font-size: .75rem; float: right; margin-top: 1px; }
+  .cats {
+    display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center;
+  }
+  .cat {
+    padding: .4rem .75rem; font-size: .8rem; border-radius: 20px;
+    border: 1px solid #2a2e37; background: transparent; color: #8a8f98;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+  }
+  .cat:hover { border-color: #4c8bf5; color: #e6e6e6; }
+  .cat.sel { background: #4c8bf5; border-color: #4c8bf5; color: #fff; }
+  #results { display: none; width: min(94vw, 660px); }
+  #results.show { display: block; }
+  .res {
+    display: flex; align-items: flex-start; gap: .6rem;
+    padding: .75rem 0; border-bottom: 1px solid #21252e;
+  }
+  .res:last-child { border: 0; }
+  .res .idx { color: #5a6070; font-size: .8rem; min-width: 1.5rem; text-align: right; padding-top: 3px; }
+  .res .text { flex: 1; }
+  .res .title { font-size: .98rem; color: #7fb0ff; text-decoration: none; display: block; }
+  .res .title:hover { text-decoration: underline; }
+  .res .meta { font-size: .72rem; color: #5a6070; margin-top: 2px; }
+  .res .tag {
+    display: inline-block; font-size: .68rem; padding: 1px 7px; border-radius: 8px;
+    background: #232834; color: #8a8f98; margin-right: 4px;
+  }
+  .res.exact { background: #121620; padding: .75rem .6rem; border-radius: 8px; }
+  .res.exact .title { font-size: 1.05rem; font-weight: 600; }
+  .loading, .empty { text-align: center; padding: 2rem; color: #8a8f98; }
+  .ft { text-align: center; padding: .8rem; font-size: .85rem; }
+  .ft a { color: #4c8bf5; text-decoration: none; }
+  .ft a:hover { text-decoration: underline; }
+  .links { display: flex; gap: 1rem; font-size: .85rem; flex-wrap: wrap; justify-content: center; }
+  .links a { color: #4c8bf5; text-decoration: none; }
+</style>
+</head>
+<body>
+  <h1>Chubee Offline Corpus</h1>
+  <div class="controls">
+    <div style="position:relative">
+      <form id="f" action="/search" method="get" autocomplete="off">
+        <input type="search" id="q" name="pattern" placeholder="Search&hellip;" autofocus autocomplete="off">
+        <button type="submit">Search</button>
+      </form>
+      <div id="drop"></div>
+    </div>
+    <div class="cats" id="cats"></div>
+  </div>
+  <div class="links"><a href="/nojs">Standard Kiwix page</a></div>
+  <div id="results"></div>
+
+<script>
+(function(){
+  const CATS = [
+    { id:"all",      label:"All" },
+    { id:"wp",       label:"Wikipedia" },
+    { id:"forums",   label:"Forums" },
+    { id:"textbooks",label:"Textbooks" },
+    { id:"coding",   label:"API Docs" },
+    { id:"travel",   label:"Travel" },
+    { id:"wiktionary",label:"Wiktionary" },
+    { id:"medical",  label:"Medical" },
+    { id:"repair",   label:"Repair" },
+    { id:"lit",      label:"Literature" },
+  ];
+  const SCORE = { wp:50, forums:25, textbooks:30, coding:25, travel:20, wiktionary:25, medical:20, repair:20, lit:20 };
+  const EXACT = 100;
+
+  const q = document.getElementById("q"), drop = document.getElementById("drop");
+  const resultsEl = document.getElementById("results"), catsEl = document.getElementById("cats");
+  let books = [], catBooks = {}, items = [], active = -1, timer = null, cat = "all";
+
+  function setupCats() {
+    catsEl.innerHTML = CATS.map(c =>
+      `<button class="cat${cat===c.id?' sel':''}" data-cat="${c.id}">${c.label}</button>`
+    ).join("");
+    catsEl.querySelectorAll(".cat").forEach(b => b.addEventListener("click", () => {
+      cat = b.dataset.cat; setupCats(); q.focus();
+      items = []; active = -1; renderDrop();
+    }));
+  }
+  function curBooks() { return catBooks[cat] || books; }
+  function wpBook() { return books.find(b => /^wikipedia_/i.test(b.name)); }
+  function decodeHtml(s) {
+    const d = document.createElement("div"); d.innerHTML = s;
+    return d.textContent || d.innerText || "";
+  }
+  const articleUrl = (content, path) => {
+    const parts = String(path).split('/').map(s => encodeURIComponent(s));
+    return `/content/${content}/${parts.join('/')}`;
+  };
+
+  (function buildBooks() {
+    const m = {}; CATS.forEach(c => { m[c.id] = []; });
+    function classify(b) {
+      const n = b.name, tl = b.title.toLowerCase(), t = (b.tags||"").toLowerCase();
+      if(/^wikipedia_/i.test(n)) m.wp.push(b);
+      if(/stackexchange|stackoverflow|superuser|serverfault|askubuntu/.test(tl) ||
+         /\.stackexchange/.test(n) || /^stackoverflow/.test(n) ||
+         /^superuser\./.test(n) || /^serverfault\./.test(n) || /^askubuntu\./.test(n)) m.forums.push(b);
+      if(/^devdocs_/i.test(n)) m.coding.push(b);
+      if(/^libretext/i.test(n)) m.textbooks.push(b);
+      if(/^wikivoyage_/i.test(n)) m.travel.push(b);
+      if(/^wiktionary_/i.test(n)) m.wiktionary.push(b);
+      if(/^mdwiki_/i.test(n) || /medical/i.test(t)) m.medical.push(b);
+      if(/^ifixit_/i.test(n)) m.repair.push(b);
+      if(/^gutenberg_/i.test(n)) m.lit.push(b);
+    }
+    (async () => {
+      try {
+        const r = await fetch("/catalog/v2/entries?count=-1");
+        const xml = new DOMParser().parseFromString(await r.text(), "application/xml");
+        xml.querySelectorAll("entry").forEach(e => {
+          const name = e.querySelector("name")?.textContent||"", title = e.querySelector("title")?.textContent||name;
+          const link = e.querySelector('link[type="text/html"]')?.getAttribute("href")||"";
+          const content = link.replace(/^\/content\//,"");
+          const tags = e.querySelector("tags")?.textContent||"", lang = e.querySelector("language")?.textContent||"eng";
+          const ftindex = !/_ftindex:no/i.test(tags);
+          if(content) { const b = { name,title,content,tags,lang,ftindex }; books.push(b); m.all.push(b); classify(b); }
+        });
+      } catch(e) {}
+      catBooks = m; setupCats();
+    })();
+  })();
+
+  async function suggest(content, term, limit) {
+    try {
+      const r = await fetch(`/suggest?content=${content}&term=${encodeURIComponent(term)}`);
+      return (await r.json()).filter(x => x.kind==="path").slice(0, limit)
+               .map(x => ({
+                 value: decodeHtml(x.value),
+                 label: decodeHtml(x.label),
+                 content,
+                 path: x.path  // actual URL path within the ZIM
+               }));
+    } catch(e) { return []; }
+  }
+
+  async function updateDrop() {
+    const term = q.value.trim();
+    if(!term) { items=[]; active=-1; renderDrop(); return; }
+    const cb = curBooks();
+    let srcBooks = [];
+    const wp = wpBook();
+    if(cat === "all" && wp) {
+      srcBooks = [wp].concat(cb.filter(b => b !== wp).slice(0, 2));
+    } else {
+      srcBooks = cb.slice(0, 3);
+    }
+    if(!srcBooks.length) return;
+    const res = await Promise.allSettled(srcBooks.map(b => suggest(b.content, term, 6)));
+    items = [];
+    for(let i=0; i<res.length; i++) {
+      if(res[i].status !== "fulfilled") continue;
+      const book = srcBooks[i];
+      for(const r of res[i].value) {
+        const decoder = document.createElement("div"); decoder.innerHTML = r.label;
+        const text = decoder.textContent||"";
+        const shortSrc = book.title.replace(/ Stack Exchange$/,"").replace(/ LibreTexts$/,"").replace(/ Docs$/,"");
+        items.push({ href: articleUrl(r.content, r.path), label: text, value: r.value, src: shortSrc });
+      }
+    }
+    items.push({ href: `/search?pattern=${encodeURIComponent(term)}`, label: `🔍 Full-text: "${term}"`, cls:"ftlink" });
+    active = items.length>0 ? 0 : -1; renderDrop();
+  }
+  function renderDrop() {
+    if(!items.length) { drop.style.display="none"; return; }
+    const regex = new RegExp("(" + q.value.trim().replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + ")", "gi");
+    drop.innerHTML = items.map((it,i) => {
+      const label = (it.cls==="ftlink") ? it.label : it.label.replace(regex, '<span class="match">$1</span>');
+      const srcTag = it.src ? `<span class="src">${it.src}</span>` : '';
+      return `<a href="${it.href}" class="${i===active?'active':''} ${it.cls||''}">${label}${srcTag}</a>`;
+    }).join("");
+    drop.style.display="block";
+    [...drop.children].forEach((a,i)=>a.addEventListener("mouseenter",()=>{active=i;mark();}));
+  }
+  function mark() { [...drop.children].forEach((a,i)=>a.classList.toggle("active",i===active)); }
+
+  q.addEventListener("input", ()=>{ clearTimeout(timer); timer=setTimeout(updateDrop,150); });
+  q.addEventListener("keydown", e => {
+    if(drop.style.display==="none") return;
+    if(e.key==="ArrowDown"){ e.preventDefault(); active=Math.min(active+1,items.length-1); mark(); }
+    else if(e.key==="ArrowUp"){ e.preventDefault(); active=Math.max(active-1,0); mark(); }
+    else if(e.key==="Enter"){ if(active>=0 && items[active]){ e.preventDefault(); location.href=items[active].href; items=[]; renderDrop(); } }
+    else if(e.key==="Escape"){ items=[]; renderDrop(); }
+  });
+  document.addEventListener("click", e=>{ if(!drop.contains(e.target) && e.target!==q) { items=[]; renderDrop(); } });
+
+  function bookScore(b) {
+    if(/^wikipedia_/i.test(b.name)) return SCORE.wp;
+    const tl = b.title.toLowerCase();
+    if(/stackexchange|stackoverflow|superuser|serverfault|askubuntu/.test(tl) ||
+       /\.stackexchange/.test(b.name) || /^stackoverflow/.test(b.name)) return SCORE.forums;
+    if(/^devdocs_/i.test(b.name)) return SCORE.coding;
+    if(/^libretext/i.test(b.name)) return SCORE.textbooks;
+    if(/^wikivoyage_/i.test(b.name)) return SCORE.travel;
+    if(/^wiktionary_/i.test(b.name)) return SCORE.wiktionary;
+    if(/^mdwiki_/i.test(b.name) || /medical/i.test(b.tags||"")) return SCORE.medical;
+    if(/^ifixit_/i.test(b.name)) return SCORE.repair;
+    if(/^gutenberg_/i.test(b.name)) return SCORE.lit;
+    return 10;
+  }
+  document.getElementById("f").addEventListener("submit", async e => {
+    e.preventDefault();
+    const term = q.value.trim(); if(!term) return;
+    const cb = curBooks(); if(!cb.length) return;
+    resultsEl.innerHTML = `<div class="loading">Searching ${cb.length} sources&hellip;</div>`;
+    resultsEl.classList.add("show");
+    const searchSet = cb;
+    const merged = [];
+    for(let i=0; i<searchSet.length; i+=8) {
+      const chunk = searchSet.slice(i, i+8);
+      const res = await Promise.allSettled(chunk.map(b => suggest(b.content, term, 15)));
+      for(let j=0; j<res.length; j++) { if(res[j].status==="fulfilled") for(const r of res[j].value) merged.push({ ...r, book:chunk[j], score:bookScore(chunk[j]) }); }
+    }
+    if(!merged.length) { resultsEl.innerHTML = `<div class="empty"><p>No title matches.</p><p class="ft"><a href="/search?pattern=${encodeURIComponent(term)}">Full-text search</a></p></div>`; return; }
+    const seen = new Set(), ranked = [], exactTerm = term.charAt(0).toUpperCase()+term.slice(1);
+    for(const r of merged) { const key = r.value.toLowerCase(); if(seen.has(key)) continue; seen.add(key); r.score += (r.value.toLowerCase()===exactTerm.toLowerCase())?EXACT:0; ranked.push(r); }
+    ranked.sort((a,b) => b.score-a.score || a.value.localeCompare(b.value));
+    const regex = new RegExp("(" + term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + ")", "gi");
+    let html = "";
+    for(let i=0; i<ranked.length && i<80; i++) {
+      const r = ranked[i], isExact = r.score>=EXACT, url = articleUrl(r.content, r.path);
+      const decoder = document.createElement("div"); decoder.innerHTML = r.label;
+      const text = (decoder.textContent||"").replace(regex, '<span class="match">$1</span>');
+      const srcTag = r.book.title.replace(/ Docs$/,"").replace(/ Stack Exchange$/,"").replace(/ LibreTexts$/,"");
+      html += `<div class="res${isExact?' exact':''}"><span class="idx">${i+1}.</span><div class="text"><a class="title" href="${url}">${text}</a><div class="meta"><span class="tag">${srcTag}</span></div></div></div>`;
+    }
+    html += `<div class="ft"><a href="/search?pattern=${encodeURIComponent(term)}">Full-text search (all text, not just titles)</a></div>`;
+    resultsEl.innerHTML = html;
+  });
+})();
+</script>
+</body>
+</html>

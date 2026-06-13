@@ -1,0 +1,9 @@
+{
+  "last_report_path": "/opt/data/logs/curator/20260612-210421",
+  "last_run_at": "2026-06-12T21:04:21.395890+00:00",
+  "last_run_duration_seconds": 571.892466,
+  "last_run_summary": "auto: no changes; llm: Good — 44 skills remaining, 6 archived. Let me write the structured summary.\n\n## Human Summary\n\n**Pass complete: 6 skills consolidated/pruned, 44 remain.**\n\n### Clusters identified and processed:\n\n**hermes-* cluster (4 → 1 umbrella):**\n- `h…\narchived 5 skill(s):\n  • hermes-agent-skill-authoring → hermes-agent\n  • hermes-identity → hermes-agent\n  • nano-pdf → ocr-and-documents\n  • node-inspect-debugger → systematic-debugging\n  • python-debugpy → systematic-debugging\nfull report: hermes curator status\nkeep an umbrella stable: hermes curator pin hermes-agent",
+  "last_run_summary_shown_at": null,
+  "paused": false,
+  "run_count": 1
+}

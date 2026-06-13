@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<!--
+  Kiwix --customIndex welcome page: multi-wiki picker + article-jump typeahead.
+  Fixes two kiwix-serve 3.8.2 problems at the UI layer:
+   1. Empty books.filter.lang= -> "Invalid request": the form sets lang/book
+      filters explicitly per selection; "All Wikis" submits bare ?pattern=.
+   2. Poor fulltext relevance (list pages outrank main articles): typeahead
+      offers an EXACT-article jump first, then /suggest title matches, then a
+      fulltext fallback.
+  Auto-discovers every ZIM from /catalog/v2/entries -> adding a wiki needs ZERO
+  page edits.
+
+  DEPLOY:
+   - Put this at /mnt/chubee-data/corpora/welcome.html (host, uid 1000).
+   - chmod 644 welcome.html   (container is uid 1001; owner-only = unreadable -> restart loop)
+   - compose command: ["--library","/data/library.xml","--customIndex","/data/welcome.html"]
+   - --customIndex is CACHED at startup: docker compose restart kiwix after any edit.
+   - User must hard-refresh (Ctrl/Cmd+Shift+R) to drop the cached old page.
+
+  PARAM RULES (kiwix 3.8.2, verified):
+   - per-book scope: books.filter.name=<library name>  (NOT books.name= -> Invalid request)
+   - all-books:      bare ?pattern=  (no book/lang filter)
+   - library <name> (e.g. wikivoyage_en_all) != content path (e.g. wikivoyage_en_all_maxi_2026-03)
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offline Wiki</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1.2rem;
+    background: #0f1115; color: #e6e6e6;
+  }
+  h1 { font-weight: 600; margin: 0; font-size: 1.6rem; }
+  .controls { display: flex; flex-direction: column; gap: .6rem; width: min(92vw, 660px); }
+  .pickrow { display: flex; align-items: center; gap: .5rem; }
+  select {
+    flex: 1; padding: .6rem .8rem; font-size: .95rem; border-radius: 10px;
+    border: 1px solid #2a2e37; background: #181b22; color: #e6e6e6; outline: none; cursor: pointer;
+  }
+  select:focus { border-color: #4c8bf5; }
+  .searchwrap { position: relative; }
+  form { display: flex; gap: .5rem; }
+  input[type=search] {
+    flex: 1; padding: .85rem 1rem; font-size: 1.05rem; border-radius: 10px;
+    border: 1px solid #2a2e37; background: #181b22; color: #e6e6e6; outline: none;
+  }
+  input[type=search]:focus { border-color: #4c8bf5; }
+  button {
+    padding: .85rem 1.4rem; font-size: 1.05rem; border: 0; border-radius: 10px;
+    background: #4c8bf5; color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  button:hover { background: #3b78e0; }
+  #drop {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 10;
+    background: #181b22; border: 1px solid #2a2e37; border-radius: 10px; overflow: hidden; display: none;
+  }
+  #drop a {
+    display: block; padding: .65rem 1rem; color: #e6e6e6; text-decoration: none;
+    border-bottom: 1px solid #21252e; font-size: .98rem;
+  }
+  #drop a:last-child { border-bottom: 0; }
+  #drop a:hover, #drop a.active { background: #232834; }
+  #drop a.exact { color: #7fb0ff; font-weight: 600; }
+  #drop .hint { color: #8a8f98; font-size: .8rem; float: right; font-weight: 400; }
+  .links { display: flex; gap: 1.2rem; font-size: .9rem; }
+  .links a { color: #4c8bf5; text-decoration: none; }
+  .links a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <h1>Offline Wiki</h1>
+  <div class="controls">
+    <div class="searchwrap">
+      <form id="f" action="/search" method="get" autocomplete="off">
+        <input type="hidden" name="books.filter.lang" value="eng" id="langField">
+        <input type="hidden" name="books.filter.name" value="" id="bookField" disabled>
+        <input type="search" id="q" name="pattern" placeholder="Search&hellip;"
+               autofocus autocomplete="off" accesskey="s">
+        <button type="submit">Search</button>
+      </form>
+      <div id="drop"></div>
+    </div>
+    <div class="pickrow">
+      <select id="picker" aria-label="Choose wiki"></select>
+    </div>
+  </div>
+  <div class="links"><a href="/nojs">Standard Kiwix page</a></div>
+
+<script>
+(function(){
+  // friendly descriptions by ZIM name prefix; extend for new projects
+  const DESCRIPTIONS = [
+    [/^wikipedia_/i,"Encyclopedia"],[/^wikivoyage_/i,"Travel"],[/^wiktionary_/i,"Dictionary"],
+    [/^wikimed|^mdwiki|medicine|medical/i,"Medical"],[/^wikibooks_/i,"Textbooks"],
+    [/^wikiquote_/i,"Quotations"],[/^wikisource_/i,"Source texts"],[/^wikiversity_/i,"Courses"],
+    [/^wikinews_/i,"News"],[/^gutenberg_/i,"Books"],[/^ifixit_/i,"Repair guides"],
+    [/^devdocs_/i,"API docs"],[/stack_?exchange|\.stackexchange/i,"Q&A"],[/^ted_/i,"Talks"],
+    [/^libretext/i,"Textbooks"],[/^phet_/i,"Science sims"],[/^vikidia_/i,"Kids encyclopedia"],
+  ];
+  const describe=(n,t)=>{ for(const[re,d]of DESCRIPTIONS){if(re.test(n))return d;} return t||"Wiki"; };
+
+  const picker=document.getElementById("picker"), q=document.getElementById("q");
+  const drop=document.getElementById("drop"), langField=document.getElementById("langField");
+  const bookField=document.getElementById("bookField");
+  let books=[], items=[], active=-1, timer=null;
+  const titleCase=s=>s?s[0].toUpperCase()+s.slice(1):s;
+  const articleUrl=(c,t)=>`/content/${c}/${encodeURIComponent(t.replace(/ /g,'_'))}`;
+  const sel=()=>picker.value;
+  const defaultBook=()=>books.find(b=>/^wikipedia_/i.test(b.name))||books[0];
+
+  function buildPicker(){
+    const w=defaultBook(); let h="";
+    if(w) h+=`<option value="${w.content}">Wikipedia (Standard)</option>`;
+    h+=`<option value="__all">All Wikis — Combined Search</option>`;
+    books.forEach(b=>{ if(w&&b.content===w.content)return; h+=`<option value="${b.content}">${b.title} (${b.desc})</option>`; });
+    picker.innerHTML=h;
+  }
+  function setForm(){
+    if(sel()==="__all"){ bookField.disabled=true; langField.disabled=true; }
+    else { const b=books.find(x=>x.content===sel())||defaultBook();
+           bookField.disabled=false; bookField.value=b?b.name:""; langField.disabled=true; }
+  }
+  function placeholder(){ const s=sel();
+    if(s==="__all") q.placeholder="Search all wikis…";
+    else { const b=books.find(x=>x.content===s)||defaultBook(); q.placeholder=`Search ${b?b.title:''}…`; } }
+
+  function render(){
+    if(!items.length){drop.style.display="none";return;}
+    drop.innerHTML=items.map((it,i)=>`<a href="${it.href}" class="${it.cls||''} ${i===active?'active':''}">${it.label}${it.hint?`<span class="hint">${it.hint}</span>`:''}</a>`).join("");
+    drop.style.display="block";
+    [...drop.children].forEach((a,i)=>a.addEventListener("mouseenter",()=>{active=i;mark();}));
+  }
+  const mark=()=>[...drop.children].forEach((a,i)=>a.classList.toggle("active",i===active));
+  async function suggest(content,term,limit){
+    try{const r=await fetch(`/suggest?content=${content}&term=${encodeURIComponent(term)}`);const d=await r.json();
+      return d.filter(x=>x.kind==="path").slice(0,limit).map(x=>({value:x.value,label:x.label,content}));}catch(e){return[];}
+  }
+  async function update(){
+    const term=q.value.trim();
+    if(!term){items=[];active=-1;render();return;}
+    items=[];
+    if(sel()==="__all"){
+      const w=defaultBook();
+      if(w){const ex=titleCase(term); items.push({href:articleUrl(w.content,ex),label:`📄 ${ex} <span class="hint">${w.title}</span>`,cls:"exact"});}
+      const per=Math.max(2,Math.floor(8/Math.max(books.length,1)));
+      for(const b of books){ (await suggest(b.content,term,per)).forEach(x=>items.push({href:articleUrl(x.content,x.value),label:`${x.label} <span class="hint">${b.title}</span>`})); }
+      items.push({href:`/search?pattern=${encodeURIComponent(term)}`,label:`🔍 Full-text: "<b>${term}</b>"`,hint:"all wikis"});
+    } else {
+      const b=books.find(x=>x.content===sel())||defaultBook(); const ex=titleCase(term);
+      items.push({href:articleUrl(b.content,ex),label:`📄 Go to article: <b>${ex}</b>`,hint:"exact",cls:"exact"});
+      (await suggest(b.content,term,8)).forEach(x=>{ if(x.value.toLowerCase()!==ex.toLowerCase()) items.push({href:articleUrl(x.content,x.value),label:x.label}); });
+      items.push({href:`/search?books.filter.name=${encodeURIComponent(b.name)}&pattern=${encodeURIComponent(term)}`,label:`🔍 Full-text in ${b.title}`,hint:"all text"});
+    }
+    active=0; render();
+  }
+  q.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(update,150);});
+  q.addEventListener("keydown",e=>{ if(drop.style.display==="none")return;
+    if(e.key==="ArrowDown"){e.preventDefault();active=Math.min(active+1,items.length-1);mark();}
+    else if(e.key==="ArrowUp"){e.preventDefault();active=Math.max(active-1,0);mark();}
+    else if(e.key==="Enter"){if(active>=0&&items[active]){e.preventDefault();location.href=items[active].href;}}
+    else if(e.key==="Escape"){items=[];render();} });
+  document.addEventListener("click",e=>{ if(!drop.contains(e.target)&&e.target!==q)drop.style.display="none"; });
+  picker.addEventListener("change",()=>{setForm();placeholder();q.focus();items=[];render();});
+
+  (async function init(){
+    try{
+      const r=await fetch("/catalog/v2/entries");
+      const xml=new DOMParser().parseFromString(await r.text(),"application/xml");
+      xml.querySelectorAll("entry").forEach(e=>{
+        const name=e.querySelector("name")?.textContent||"";
+        const title=e.querySelector("title")?.textContent||name;
+        const link=e.querySelector('link[type="text/html"]')?.getAttribute("href")||"";
+        const content=link.replace(/^\/content\//,"");
+        const lang=e.querySelector("language")?.textContent||"eng";
+        if(content) books.push({name,title,content,lang,desc:describe(name,title)});
+      });
+    }catch(e){}
+    if(!books.length) return;
+    books.sort((a,b)=>(/^wikipedia_/i.test(b.name)?1:0)-(/^wikipedia_/i.test(a.name)?1:0)||a.title.localeCompare(b.title));
+    buildPicker(); setForm(); placeholder();
+  })();
+})();
+</script>
+</body>
+</html>

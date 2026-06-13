@@ -1,0 +1,152 @@
+{
+  "unlocks": {
+    "autonomous_avalanche": {
+      "evidence": null,
+      "first_tier": "Silver",
+      "unlocked_at": 1781353539
+    },
+    "background_process_enjoyer": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "browser_possession": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "claude_confidant": {
+      "evidence": null,
+      "first_tier": "Gold",
+      "unlocked_at": 1781353539
+    },
+    "config_surgeon": {
+      "evidence": null,
+      "first_tier": "Gold",
+      "unlocked_at": 1781353539
+    },
+    "context_dragon": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "docker_name_collision": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "five_model_flight": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "gemini_cartographer": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "let_him_cook": {
+      "evidence": {
+        "session_id": "20260606_091446_e71e07",
+        "title": "Model Download Lock Resolved",
+        "value": 388
+      },
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "marathon_operator": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "model_hopper": {
+      "evidence": null,
+      "first_tier": "Silver",
+      "unlocked_at": 1781353539
+    },
+    "model_sommelier": {
+      "evidence": null,
+      "first_tier": "Olympian",
+      "unlocked_at": 1781353539
+    },
+    "open_weights_pilgrim": {
+      "evidence": null,
+      "first_tier": "Gold",
+      "unlocked_at": 1781353539
+    },
+    "openrouter_enjoyer": {
+      "evidence": null,
+      "first_tier": "Silver",
+      "unlocked_at": 1781353539
+    },
+    "permission_denied_any_percent": {
+      "evidence": null,
+      "first_tier": "Gold",
+      "unlocked_at": 1781353539
+    },
+    "port_3000_taken": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "provider_polyglot": {
+      "evidence": null,
+      "first_tier": "Gold",
+      "unlocked_at": 1781353539
+    },
+    "rebase_acrobat": {
+      "evidence": null,
+      "first_tier": "Silver",
+      "unlocked_at": 1781353539
+    },
+    "red_text_connoisseur": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "rollback_wizard": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "skill_issue_skill_created": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "supposed_to_be_quick": {
+      "evidence": {
+        "session_id": "20260606_091446_e71e07",
+        "title": "Model Download Lock Resolved",
+        "value": 800
+      },
+      "first_tier": "Silver",
+      "unlocked_at": 1781353539
+    },
+    "terminal_goblin": {
+      "evidence": null,
+      "first_tier": "Silver",
+      "unlocked_at": 1781353539
+    },
+    "test_suite_tamer": {
+      "evidence": null,
+      "first_tier": "Silver",
+      "unlocked_at": 1781353539
+    },
+    "toolset_cartographer": {
+      "evidence": null,
+      "first_tier": "Gold",
+      "unlocked_at": 1781353539
+    },
+    "weekend_warrior": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    },
+    "yaml_colon_incident": {
+      "evidence": null,
+      "first_tier": "Copper",
+      "unlocked_at": 1781353539
+    }
+  }
+}
