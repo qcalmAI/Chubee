@@ -5,7 +5,7 @@
 > scratch. If you (the agent) change anything material in this system, UPDATE
 > THIS FILE in the same turn. See "Keeping this doc current" at the bottom.
 >
-> Last verified: 2026-06-11 by Chubee. vLLM build `0.22.2.dev0+g0decac0d9.d20260606`.
+> Last verified: 2026-06-13 by Chubee. vLLM build `0.22.2.dev0+g0decac0d9.d20260606`.
 > gpu-memory-utilization: **0.60** (via `VLLM_GPU_MEM_UTIL` in `.env`).
 
 ---
@@ -351,11 +351,52 @@ relevant section now, before you end your turn.
 
 ---
 
-## 10. Changelog
+## 10. Backup & Versioning
+
+All mutable state (configuration, skills, scripts, memories) lives under `/opt/data`
+(mounted from the host's `~/.hermes/`). A **daily cron job** at **02:00 UTC**
+(`backup-to-git.sh` + `cron/backup-to-git.yml`) commits any changed files and pushes
+to `git@github.com:qcalmAI/Chubee.git`.
+
+- **Repository**: `/opt/data` is a full Git repo. Remote: single `origin` →
+  `qcalmAI/Chubee` (SSH deploy key with write access).
+- **Script**: `/opt/data/scripts/backup-to-git.sh` — stages all tracked files, exits
+  silently (exit 0, no stdout) when nothing changed, commits + pushes otherwise.
+- **Cron job**: `no_agent=true`, `script=backup-to-git.sh`, runs daily at `0 2 * * *`.
+  Silent-on-clean watchdog pattern — the user only sees output when changes are pushed
+  or on error.
+- **Secrets excluded**: `.env`, `.env.bak*`, `auth.json`, SSH keys, `.ssh/`, and
+  runtime state (`state.db`, `gateway.pid`, `cron/output/`, `cron/jobs.json`) are
+  all in `.gitignore`. GitHub push protection verified clean on the initial push.
+- **Recovery**: `git clone git@github.com:qcalmAI/Chubee.git ~/.hermes` on a fresh host
+  restores all config, skills, scripts, and memories. SSH key and API tokens must be
+  provisioned separately.
+
+The cron job and script are documented here so any future agent can re-derive,
+repair, or re-schedule them without external knowledge.
+
+---
+
+## 11. Changelog
 
 Track the evolution of the system here. Newest first. One line per meaningful change:
 what changed, why, and (if non-obvious) the impact. The agent appends an entry whenever
 it makes a structural change in the same turn it makes the change.
+
+### 2026-06-13
+- **Set up automated Git backup.** Created `backup-to-git.sh` (watchdog: silent-on-clean)
+  and registered daily cron job at 02:00 UTC. Consolidated remote to single repo
+  `qcalmAI/Chubee.git`. Added GitHub deploy key for SSH push. Added §10 documenting
+  the backup strategy and recovery path.
+- **Consolidated GitHub remotes.** `/opt/data` now pushes to a single repo
+  (`qcalmAI/Chubee.git`). Old remotes (`chubee-stack`, `chubeestack`) removed.
+- **Renamed local provider header** to "Local" in the dashboard model picker
+  (was "Nemotron Nano 30B"). The underlying two model names (`nemotron-nano-30b`
+  and `local/nemotron-nano-30b`) are preserved per §4 — this is cosmetic only.
+- **Noted**: model.default is `deepseek/deepseek-v4-pro / openrouter` (drifted from
+  `nemotron-nano-30b / custom:local`). Sixth day on a cloud default. Owner aware.
+- **hermes container is stopped**; `hermes-dashboard` runs both the gateway and
+  dashboard. `docker exec hermes` commands now route through `hermes-dashboard`.
 
 ### 2026-06-11
 - **Fixed container-side drift-check permission bug.** The ARCHITECTURE.md copy at
