@@ -368,9 +368,12 @@ to `git@github.com:qcalmAI/Chubee.git`.
 - **Secrets excluded**: `.env`, `.env.bak*`, `auth.json`, SSH keys, `.ssh/`, and
   runtime state (`state.db`, `gateway.pid`, `cron/output/`, `cron/jobs.json`) are
   all in `.gitignore`. GitHub push protection verified clean on the initial push.
-- **Recovery**: `git clone git@github.com:qcalmAI/Chubee.git ~/.hermes` on a fresh host
-  restores all config, skills, scripts, and memories. SSH key and API tokens must be
-  provisioned separately.
+- **Recovery**: See **[`BOOTSTRAP.md`](../../BOOTSTRAP.md)** at the repo root for a
+  complete step-by-step guide to setting up a Windows desktop from scratch. On the
+  ChubeeAcer, `git clone git@github.com:qcalmAI/Chubee.git /opt/data` restores all
+  config, skills, scripts, and memories — then run the `hermes-dashboard` container
+  to bring the stack back online. SSH key and API tokens must be provisioned
+  separately.
 
 The cron job and script are documented here so any future agent can re-derive,
 repair, or re-schedule them without external knowledge.
@@ -382,6 +385,12 @@ repair, or re-schedule them without external knowledge.
 Track the evolution of the system here. Newest first. One line per meaningful change:
 what changed, why, and (if non-obvious) the impact. The agent appends an entry whenever
 it makes a structural change in the same turn it makes the change.
+
+### 2026-06-14
+- **Added BOOTSTRAP.md** — standalone setup guide for replicating the Hermes Windows
+  desktop environment from scratch. Covers prerequisites, install, config restore,
+  skills, and verification checklist. Referenced from §10 Recovery.
+- **Updated ARCHITECTURE.md §10 Recovery** to point to BOOTSTRAP.md.
 
 ### 2026-06-13
 - **Set up automated Git backup.** Created `backup-to-git.sh` (watchdog: silent-on-clean)
