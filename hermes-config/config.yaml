@@ -417,6 +417,10 @@ model_aliases:
     base_url: http://172.17.0.1:8000/v1
     model: nemotron-nano-30b
     provider: custom:local
+  ha-fast:
+    model: qwen2.5:3b
+    provider: custom:ollama
+    base_url: http://127.0.0.1:11434/v1
 model_catalog:
   enabled: true
   providers:
@@ -698,3 +702,7 @@ x_search:
   model: grok-4.20-reasoning
   retries: 2
   timeout_seconds: 180
+custom_providers:
+- name: ollama
+  base_url: http://127.0.0.1:11434/v1
+  api_mode: chat_completions

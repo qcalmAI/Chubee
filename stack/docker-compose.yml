@@ -141,7 +141,7 @@ services:
     - 10300:10300
     volumes:
     - /mnt/chubee-data/docker-volumes/wyoming-whisper:/data
-    command: --model base-int8 --uri tcp://0.0.0.0:10300 --data-dir /data --device cpu --compute-type int8
+    command: --model tiny-int8 --uri tcp://0.0.0.0:10300 --data-dir /data --device cpu --compute-type int8
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/10300'"]
       interval: 15s
