@@ -14,7 +14,7 @@
 #   - The dashboard service binds to 127.0.0.1 by default. It stores API
 #     keys; exposing it on LAN without auth is unsafe. If you want remote
 #     access, use an SSH tunnel or put it behind a reverse proxy that
-#     adds authentication — do NOT pass --insecure --host 0.0.0.0.
+#     adds authentication — do NOT pass  --host 0.0.0.0.
 #   - If you override entrypoint, keep `/init` as the first command in
 #     the chain (or let docker use the image's default ENTRYPOINT,
 #     which is `["/init", "/opt/hermes/docker/main-wrapper.sh"]`).
@@ -36,8 +36,8 @@ services:
     volumes:
       - ~/.hermes:/opt/data
     environment:
-      - HERMES_UID=${HERMES_UID:-10000}
-      - HERMES_GID=${HERMES_GID:-10000}
+      - HERMES_UID=10000
+      - HERMES_GID=10000
       # To expose the OpenAI-compatible API server beyond localhost,
       # uncomment BOTH lines (API_SERVER_KEY is mandatory for auth):
       # - API_SERVER_HOST=0.0.0.0
@@ -70,8 +70,8 @@ services:
     volumes:
       - ~/.hermes:/opt/data
     environment:
-      - HERMES_UID=${HERMES_UID:-10000}
-      - HERMES_GID=${HERMES_GID:-10000}
-    # Bound to 0.0.0.0 --insecure for remote access over Tailscale (100.65.206.99).
+      - HERMES_UID=10000
+      - HERMES_GID=10000
+    # Bound to 0.0.0.0  for remote access over Tailscale (100.65.206.99).
     # Upstream defaults to 127.0.0.1; this is a deliberate local customization.
     command: ["dashboard", "--host", "0.0.0.0", "--insecure", "--no-open"]
