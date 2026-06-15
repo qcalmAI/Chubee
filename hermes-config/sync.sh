@@ -1,28 +1,20 @@
 #!/bin/bash
 # Sync hermes config FROM ~/.hermes/ INTO ~/chubee/hermes-config/
-# Run this before git commit to capture latest state
+# Hermes data is owned by UID 10000, so read via docker exec
 set -e
 
 CHUBEE="/opt/data/home/chubee/hermes-config"
-HERMES="/opt/data/home/.hermes"
+CONTAINER=hermes-dashboard
 
 # Config + personality
-cp "/config.yaml" "/"
-cp "/SOUL.md" "/"
+docker exec  cat /opt/data/config.yaml > "/config.yaml"
+docker exec  cat /opt/data/SOUL.md > "/SOUL.md"
 
 # Cron jobs
-cp "/cron/jobs.json" "/cron/"
+docker exec  cat /opt/data/cron/jobs.json > "/cron/jobs.json"
 
 # Memories
-cp "/memories/MEMORY.md" "/memories/" 2>/dev/null || true
-cp "/memories/USER.md" "/memories/" 2>/dev/null || true
-
-# Scripts
-cp "/scripts/"*.py "/scripts/" 2>/dev/null || true
-cp "/scripts/"*.sh "/scripts/" 2>/dev/null || true
-
-# Skills (custom only)
-rsync -a --delete "/skills/dogfood/" "/skills/dogfood/" 2>/dev/null || true
-rsync -a --delete "/skills/research/youtube-textbook/" "/skills/research/youtube-textbook/" 2>/dev/null || true
+docker exec  cat /opt/data/memories/MEMORY.md > "/memories/MEMORY.md" 2>/dev/null || true
+docker exec  cat /opt/data/memories/USER.md > "/memories/USER.md" 2>/dev/null || true
 
 echo 'Synced hermes config -> chubee/hermes-config/'

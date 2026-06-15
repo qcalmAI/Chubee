@@ -2,9 +2,9 @@ User wants build/process check intervals at max 3 minutes — never set longer i
 §
 Before mutating a live service: prove broken with READ-ONLY probes first. Reproduce exact failing request. Verify git diff, bash history, on-disk state — don't trust garbled summaries.
 §
-CRITICAL — Stale background processes from prior sessions corrupt model files in /mnt/chubee-data/super-weights/. Before any model-file operation, ALWAYS kill stale downloads: `ps aux | grep -E "model-0000|hftoken|auth_header" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null` then a second pass. Never mix safetensor shards from different download sessions — all 5 must come from the same byte-for-byte source or vLLM fails with "mixed quantization" errors.
+Model-file safety: kill stale downloads before any model op (`ps aux | grep model-0000 | awk '{print $2}' | xargs -r kill -9` ×2 passes). Never mix safetensor shards from different sessions. User preserves models as offline "trophy" tarballs — self-contained archives isolated from running services. Worried open-source models may become illegal.
 §
-ChubeeAcer (100.65.206.99): headless Acer ARM64. Source: ~/hermes-agent. Config: ~/.hermes→/opt/data. Services on compose: gateway, dashboard (v0.16.0). The hermes container stays stopped (UID clash). `docker compose up -d --force-recreate` for restart. Tailscale SSH: qcalmus@chubeeacer. Local vLLM at 172.17.0.1:8000 (Qwen, Nemotron), Ollama 127.0.0.1:11434 (GLM vision). Primary: OpenRouter. Startup 3-4min.
+ChubeeAcer (100.65.206.99): ARM64/GB10, 119.7GiB unified memory. SSH: qcalmus@chubeeacer. Hermes source ~/hermes-agent (fork: qcalmAI/Chubee.git), config ~/.hermes→/opt/data. Stack repo ~/chubee (qcalmAI/chubee-stack.git). vLLM :8000 (Nemotron Nano 30B), Ollama :11434 (GLM vision). Primary: OpenRouter. Only hermes-dashboard running (hermes stopped). Model trophies: Qwen2.5-32B (15GB) + Nemotron-Super-120B (75GB) in /mnt/chubee-data/. Startup 3-4min.
 §
 Do NOT modify SOUL.md or core config files unless explicitly directed. The user wants those left alone.
 §

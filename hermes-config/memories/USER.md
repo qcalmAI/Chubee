@@ -1,7 +1,9 @@
-Finances: Snapshot at /mnt/chubee-data/personal-docs/Finances/snapshot.json. Cashflow: Scale AI paycheck (~$4,900 biweekly) → Vanguard Brokerage XXXX0577. Scale AI reimbursements (~$1,200/mo) → USAA Checking 8837. VA disability ($3,939/mo) → USAA Savings 8829 → Vanguard VA XXXX4654. Vanguard sells fund checking for living expenses. Rent $2,495 via Venmo. 401(k): $1,020 biweekly (Roth $714 + Trad $306). Sold KC property Feb 2026 ($34,491 → Vanguard). Crypto cold storage (BTC/ETH/SOL) prices auto-update every 6h. Credit cards: Amazon Visa 7516 + Chase Freedom 5047. Stuttgart travel ~12d/mo, expenses reimbursed.
+Finances in /mnt/chubee-data/personal-docs/Finances/snapshot.json. Scale AI ~$4.9K/biwk, VA $3.9K/mo. Rent $2,495. Crypto cold storage. 401k $1,020/biwk. Stuttgart travel ~12d/mo.
 §
 User prefers Chubee as the sole interface for all tools — rejected Paperless-ngx because it adds a separate web UI they'd never use. Wants everything accessible through Chubee conversation, not separate dashboards.
 §
 User wants background/automated jobs to be completely silent unless there's an error. No progress notifications, no completion notifications, no periodic summaries. The crypto price cron job is configured this way: no_agent=true, script-only, zero stdout.
 §
 When user asks about connecting desktop Hermes to headless Acer: they mean dashboard backend connection (shared sessions), NOT model provider endpoints. If ambiguous, clarify before guessing — getting this wrong frustrates quickly.
+§
+User is new to GitHub — explain git operations simply, don't assume knowledge. Wants complete recoverability: if Acer dies, restore everything from git onto new machine with no loss of continuity. All config, skills, cron, memories should live in git (secrets excluded). Prefers clean filesystems — no cruft, no stale backups, no relic directories.
