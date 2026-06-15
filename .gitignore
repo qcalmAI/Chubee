@@ -9,3 +9,6 @@ ollama-models/
 .idea/
 *.swp
 build/spark-vllm-docker/
+
+# Hermes live data (these are backed up to hermes-config/ instead)
+hermes-config/.sync.lock

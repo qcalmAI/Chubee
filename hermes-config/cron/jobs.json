@@ -1,0 +1,208 @@
+{
+  "jobs": [
+    {
+      "id": "32d1dab42ab4",
+      "name": "ARCHITECTURE.md drift check",
+      "prompt": "A drift-detection script has run against ~/chubee/stack/ARCHITECTURE.md and its output is injected above as context.\n\nIf the script output is EMPTY or shows no drift: the architecture doc matches reality. Respond with EXACTLY the single word \"SILENT\" and nothing else \u2014 do not send any message to the user.\n\nIf the script output reports DRIFT (lines starting with \"\u2022\"): the live system has diverged from what ARCHITECTURE.md documents. Do this:\n1. Read ~/chubee/stack/ARCHITECTURE.md.\n2. For each drift item, re-verify the live fact yourself (curl http://localhost:8000/v1/models, read ~/.hermes/config.yaml, docker ps, docker logs vllm-super for KV/concurrency numbers) \u2014 do not trust the script blindly, confirm with your own tool calls.\n3. Update the affected section(s) of ARCHITECTURE.md to match reality (\u00a72 measured tables, \u00a73 running state, \u00a75 build args, model tiers). Use the patch/write_file tools.\n4. Bump the \"Last verified\" date at the top to today.\n5. Then send the user a SHORT report: what drifted, what you changed in the doc, and whether anything looks like an unintended/accidental change they should know about (e.g. model silently reverted to OpenRouter, a container down, providers dict no longer empty).\n\nBe surgical \u2014 only change what actually drifted. Preserve the doc's structure and the \"why we chose Nemotron\" reasoning. Never invent facts; every number in the doc must come from a live tool call you made this run.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "arch-drift-check.sh",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * *",
+        "display": "0 9 * * *"
+      },
+      "schedule_display": "0 9 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 7
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-07T09:04:34.014719+00:00",
+      "next_run_at": "2026-06-16T09:00:00+00:00",
+      "last_run_at": "2026-06-15T09:04:51.047194+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": null,
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "e15fb1ca6195",
+      "name": "arch-drift-check",
+      "prompt": "You are the architecture-doc drift watchdog for ChubeeAcer. A detector script has ALREADY RUN and its output is injected above as context.\n\nDECISION RULE:\n- If the injected script output is EMPTY / contains no \"DRIFT DETECTED\" line: the doc matches reality. Reply with exactly the single word SILENT and do nothing else. Send nothing to the user.\n- If it contains a \"DRIFT DETECTED\" report: drift is real. Do the following:\n  1. RE-VERIFY each flagged item yourself with your own tool calls (curl /v1/models, read ~/chubee/stack/.env, docker ps, curl localhost:6333/collections, read the doc). Do NOT trust the script blindly \u2014 it flags candidates; you confirm.\n  2. For each CONFIRMED drift, surgically update ONLY the affected fact in ~/chubee/stack/ARCHITECTURE.md. PRESERVE all \"why we chose X\" reasoning prose \u2014 never rewrite the design-rationale sections. Never invent numbers; every figure must come from a live tool call you made this run.\n  3. Append a dated bullet to the \u00a710 Changelog describing what drifted and what you changed.\n  4. Bump the \"Last verified: YYYY-MM-DD\" line at the top to today.\n  5. Send the user a SHORT report: what drifted, what you changed, and flag anything that looks ACCIDENTAL or dangerous (e.g. the Hermes default model silently reverting from local Nemotron to a cloud provider, a container down, gpu-util mismatch). If something looks like an unintended regression, say so plainly and ask if they want it reverted.\n\nKeep it terse. No preamble. The doc is the system-of-record; your job is to keep it true and surface surprises.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "arch-drift-check.sh",
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * *",
+        "display": "0 9 * * *"
+      },
+      "schedule_display": "0 9 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 8
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-07T15:12:42.234730+00:00",
+      "next_run_at": "2026-06-16T09:00:00+00:00",
+      "last_run_at": "2026-06-15T09:04:18.036348+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": "no delivery target resolved for deliver=origin",
+      "deliver": "origin",
+      "origin": null,
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "e83322342afc",
+      "name": "chubee-git-backup",
+      "prompt": "Run the git backup script. No report is needed unless there is an error. If there's an error, report it at 0900 the following day.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "backup-to-git.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 2 * * *",
+        "display": "0 2 * * *"
+      },
+      "schedule_display": "0 2 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 1
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-13T16:34:03.370763+00:00",
+      "next_run_at": "2026-06-16T02:00:00+00:00",
+      "last_run_at": "2026-06-15T02:00:19.894738+00:00",
+      "last_status": "error",
+      "last_error": "Script exited with code 1\nstderr:\nTo github.com:qcalmAI/Chubee.git\n ! [rejected]        main -> main (fetch first)\nerror: failed to push some refs to 'github.com:qcalmAI/Chubee.git'\nhint: Updates were rejected because the remote contains work that you do not\nhint: have locally. This is usually caused by another repository pushing to\nhint: the same ref. If you want to integrate the remote changes, use\nhint: 'git pull' before pushing again.\nhint: See the 'Note about fast-forwards' in 'git push --help' for details.\nstdout:\n[main c2824a2] Auto-backup 2026-06-15T02:00:19Z\n 66 files changed, 4536 insertions(+), 938 deletions(-)\n create mode 100755 images/composer-image-test.png\n create mode 100644 skills/.hub/audit.log\n create mode 100644 skills/.hub/lock.json\n create mode 100644 skills/.hub/taps.json\n create mode 100644 skills/devops/docker-compose-services/references/hermes-permission-cascade.md\n create mode 100644 skills/devops/docker-compose-services/references/home-assistant-service.md\n create mode 100644 skills/devops/docker-compose-services/references/stirling-pdf-service.md\n create mode 100644 skills/devops/hermes-remote-backend/SKILL.md\n create mode 100644 skills/devops/hermes-remote-backend/references/remote-backend-docs.md\n create mode 100644 skills/devops/hermes-remote-backend/references/tools-not-available-diagnosis.md\n create mode 100644 skills/devops/tiered-model-operations/references/ollama-secondary-models.md\n mode change 100644 => 100755 skills/github/github-auth/scripts/gh-env.sh\n create mode 100644 skills/mlops/local-vision-pipeline/SKILL.md\n create mode 100644 skills/mlops/local-vision-pipeline/references/hermes-vision-config.md\n create mode 100644 skills/mlops/local-vision-pipeline/references/samba-config.md\n create mode 100644 skills/mlops/vllm-serving/references/local-vision-pipeline.md\n create mode 100644 skills/productivity/financial-tracking/SKILL.md\n create mode 100644 skills/productivity/financial-tracking/references/pay-stub-parsing.md\n create mode 100644 skills/productivity/financial-tracking/references/scale-options.md\n create mode 100644 skills/productivity/financial-tracking/references/snapshot-schema.md\n create mode 100644 skills/productivity/financial-tracking/references/vanguard-5498-parsing.md\n create mode 100644 skills/productivity/financial-tracking/references/vanguard-ofx-format.md\n create mode 100644 skills/productivity/financial-tracking/scripts/crypto-price-update.py\n create mode 100644 skills/productivity/personal-docs/SKILL.md\n create mode 100644 skills/productivity/personal-docs/references/finances-directory.md\n create mode 100644 skills/productivity/personal-docs/references/pipeline-architecture.md\n create mode 100644 skills/productivity/personal-docs/scripts/crypto-price-update.py\n create mode 100644 skills/productivity/stirling-pdf/SKILL.md\n create mode 100644 skills/smart-home/ha-tools-speed/SKILL.md\n create mode 100644 skills/smart-home/ha-tools-speed/references/browser-api-fallback.md\n create mode 100644 skills/smart-home/ha-tools-speed/references/connection-pooling-patch.md\n create mode 100644 skills/smart-home/ha-tools-speed/references/terminal-backend-troubleshooting.md\n create mode 100644 skills/smart-home/ha-tools-speed/references/websocket-api-protocol.md\n create mode 100644 skills/smart-home/ha-zigbee-lights/SKILL.md\n create mode 100644 skills/software-development/simplify-code/SKILL.md",
+      "last_delivery_error": "no delivery target resolved for deliver=telegram",
+      "deliver": "telegram",
+      "origin": null,
+      "enabled_toolsets": [
+        "terminal"
+      ],
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "0dbfc59527c1",
+      "name": "Daily email briefing",
+      "prompt": "Run the daily email triage for quintonschubee@gmail.com.\n\n1. List all emails from the inbox:\n   himalaya envelope list --page-size 50\n\n2. For each unread email, categorize:\n   - URGENT: security alerts, password resets, account lockouts, billing issues\n   - IMPORTANT: bills, receipts, travel confirmations, shipping notifications, legal docs\n   - PERSONAL: emails from known contacts, direct replies\n   - NEWSLETTER: marketing, newsletters, promotions\n   - JUNK: obvious spam, no-reply blasts\n\n3. Send a SINGLE summary email to qcalmus@gmail.com:\n\n   Subject: \"Chubee Inbox Briefing \u2014 [date]\"\n\n   Body format:\n   \ud83d\udcec Chubee Inbox Briefing \u2014 [date]\n   \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n   \ud83d\udd34 URGENT (N): [subject] \u2014 [sender] ([time])\n   \ud83d\udfe1 IMPORTANT (N): [subject] \u2014 [sender] ([time])\n   \ud83d\udd35 PERSONAL (N): [subject] \u2014 [sender] ([time])\n   \u26aa EVERYTHING ELSE (N): N newsletters/promos\n\n   Use `himalaya template send` piped via stdin.\n\n4. If zero emails, send \"Inbox zero \u2014 nothing to report.\"\n\n5. If urgent items exist, add: \"\u26a0\ufe0f Action needed: [X] urgent items.\" at top.\n\nRules:\n- ONE email per day. Never send multiple.\n- Never reply to individual emails without explicit permission.\n- Default to lower-urgency if ambiguous.\n- One line per item: sender + subject.\n- Do NOT mark emails as read.",
+      "skills": [
+        "himalaya"
+      ],
+      "skill": "himalaya",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8 * * *",
+        "display": "0 8 * * *"
+      },
+      "schedule_display": "0 8 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 2
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-13T19:19:02.733425+00:00",
+      "next_run_at": "2026-06-16T08:00:00+00:00",
+      "last_run_at": "2026-06-15T08:01:45.797905+00:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "2067828cdf2b",
+      "name": "Crypto price update",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "scripts/crypto-price-update.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 360,
+        "display": "every 360m"
+      },
+      "schedule_display": "every 360m",
+      "repeat": {
+        "times": null,
+        "completed": 3
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-13T22:03:15.507514+00:00",
+      "next_run_at": "2026-06-15T23:17:20.574837+00:00",
+      "last_run_at": "2026-06-15T17:17:20.574837+00:00",
+      "last_status": "error",
+      "last_error": "Script not found: /opt/data/scripts/scripts/crypto-price-update.py",
+      "last_delivery_error": "no delivery target resolved for deliver=None",
+      "deliver": null,
+      "origin": null,
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null
+    }
+  ],
+  "updated_at": "2026-06-15T17:17:20.574992+00:00"
+}

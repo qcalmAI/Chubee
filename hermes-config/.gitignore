@@ -1,0 +1,5 @@
+# Never commit secrets
+.env
+auth.json
+hermes_ssh_key*
+*.lock
